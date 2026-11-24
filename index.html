@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#8a6a1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đánh số mảnh ghép</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: xưởng cắt laser — gọn, chính xác, tay dính bụi đồng vẫn bấm được.
+   IDEA: tấm phiếu kiểm hàng của xưởng: ảnh mảnh thật, đóng dấu số lên từng mảnh.
+   PICTURE: chính ảnh chụp đã đánh số, chiếm trọn màn hình.
+   COLOUR and TYPE: nền giấy trắng ngà lạnh / đêm xanh than; đồng thau làm điểm nhấn; xanh lá = chắc chắn, hổ phách = có thể, đỏ = chưa rõ. Be Vietnam Pro.
+   LAYOUT: một cột: nút chụp lớn, ảnh kết quả, danh sách số; chi tiết mảnh trượt lên từ dưới. */
+:root{color-scheme:light dark;
+--bg:light-dark(#f3f2ee,#12161a);--card:light-dark(#ffffff,#1b2127);--ink:light-dark(#16181b,#eceae4);--mute:light-dark(#5e636b,#9aa3ac);
+--line:light-dark(#dcd9d1,#2c343c);--brass:light-dark(#8a6a1f,#d5b25e);--ok:light-dark(#11804a,#3fd08a);--maybe:light-dark(#b26a00,#f2a93b);--bad:light-dark(#c8322a,#ff6b5e)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Be Vietnam Pro",system-ui,sans-serif;overflow-x:clip}
+header{padding:18px max(4vw,16px) 6px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(24px,5vw,34px);line-height:1.05;margin:0;font-weight:800;letter-spacing:-.01em}
+.sub{color:var(--mute);font-size:14px}
+main{padding:8px max(4vw,16px) 40px;max-width:1240px;margin:0 auto}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}
+.btn{appearance:none;border:0;border-radius:14px;min-height:52px;padding:0 20px;font:600 17px/1 inherit;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
+.btn.main{background:var(--brass);color:light-dark(#fff,#16120a);flex:1 1 220px;justify-content:center;font-size:19px;min-height:60px}
+.btn.alt{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+input[type=file]{display:none}
+.stage{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;min-height:240px;display:grid;place-items:center}
+.stage canvas{display:block;width:100%;height:auto;touch-action:manipulation}
+.empty{padding:40px 20px;text-align:center;color:var(--mute);max-width:46ch}
+.empty svg{width:120px;height:auto;margin-bottom:10px}
+.status{font-size:15px;color:var(--mute);margin:10px 2px;min-height:1.5em}
+.status b{color:var(--ink)}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}
+.prog i{display:block;height:100%;width:0;background:var(--brass);transition:width .2s}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mute);margin:10px 2px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
+.chip{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:12px;padding:8px 12px;cursor:pointer;text-align:left;font:inherit;color:inherit;min-height:52px}
+.chip .n{font-weight:800;font-size:22px;font-variant-numeric:tabular-nums}
+.chip .m{font-size:13px;color:var(--mute)}
+.sheet{visibility:hidden;position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.18);padding:14px max(4vw,16px) 22px;transform:translateY(105%);transition:transform .22s,visibility .22s;max-height:78vh;overflow:auto;z-index:5}
+.sheet.on{transform:none;visibility:visible}
+.sheet h2{margin:0 0 4px;font-size:22px}
+.cands{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px}
+.cand{border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
+.cand canvas{width:100%;aspect-ratio:1;image-rendering:pixelated;border-radius:8px;background:light-dark(#fff,#0f1316)}
+.cand .n{font-weight:800;font-size:20px}
+.cand .m{font-size:13px;color:var(--mute)}
+.close{float:right}
+details{margin-top:28px;border-top:1px solid var(--line);padding-top:14px}
+summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+.set{display:flex;flex-direction:column;gap:12px;font-size:15px}
+.set label{display:flex;gap:10px;align-items:center;min-height:44px}
+.set input[type=checkbox]{width:22px;height:22px;accent-color:var(--brass)}
+.tips{color:var(--mute);font-size:14px;margin:0;padding-left:20px}
+@media (prefers-reduced-motion:reduce){.sheet,.prog i{transition:none}}
+</style>
+</head>
+<body>
+<header><h1>Đánh số mảnh ghép</h1><span class="sub" id="libinfo">Đang nạp thư viện…</span></header>
+<main>
+  <div class="bar">
+    <button class="btn main" id="shoot"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="4"/></svg>Chụp ảnh mảnh ghép</button>
+    <button class="btn alt" id="pick">Chọn ảnh có sẵn</button>
+    <input type="file" id="fcam" accept="image/*" capture="environment">
+    <input type="file" id="fpick" accept="image/*">
+  </div>
+  <div class="status" id="status"></div>
+  <div class="stage" id="stage">
+    <div class="empty" id="empty">
+      <svg viewBox="0 0 120 80"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><path d="M14 20c8-8 18 4 26-2s4-14 14-12 2 14 10 16 16-8 20 2-10 12-4 18 16 2 14 12-14 6-20 12 2 14-8 14-6-12-14-10-12 10-20 6 6-14-2-18-14 4-16-6 8-12 2-18-10-6-2-14z"/></g><text x="60" y="48" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">#?</text></svg>
+      <div>Đặt các mảnh rời nhau, chụp thẳng từ trên xuống. Mỗi mảnh sẽ được ghi số và cho biết đang <b>ngửa</b> hay <b>úp</b>.</div>
+    </div>
+    <canvas id="cv" hidden></canvas>
+  </div>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--ok)"></i>Chắc chắn</span>
+    <span><i class="dot" style="background:var(--maybe)"></i>Có thể (số kèm ?)</span>
+    <span><i class="dot" style="background:var(--bad)"></i>Chưa nhận ra</span>
+    <span><i class="dot" style="background:#888"></i>Bị cắt mép ảnh</span>
+    <span>Chạm vào mảnh để xem các ứng viên</span>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <details>
+    <summary>Cài đặt và mẹo chụp</summary>
+    <div class="set">
+      <label><input type="checkbox" id="swap"> Đảo quy ước ngửa/úp (bật nếu ứng dụng báo ngược với thực tế)</label>
+      <label><input type="checkbox" id="unique"> Mỗi số chỉ xuất hiện một lần trong ảnh (tắt nếu ảnh có mảnh trùng từ nhiều bộ)</label>
+      <label><input type="checkbox" id="showall"> Hiện cả số đoán cho mảnh chưa nhận ra</label>
+      <div><button class="btn alt" id="libbtn">Nạp thư viện bộ khác (.json)</button><input type="file" id="flib" accept=".json,application/json"></div>
+      <ul class="tips">
+        <li>Mặt ngửa = mặt nằm trên khi cắt laser (như sơ đồ). Mặt úp = mảnh bị lật.</li>
+        <li>Chụp thẳng góc, đủ sáng, không flash, tránh lóa trên mảnh sáng màu.</li>
+        <li>Mảnh màu sáng/ánh kim nhận tốt hơn trên nền tối; mảnh sẫm tốt hơn trên nền sáng.</li>
+        <li>Để các mảnh cách nhau ít nhất một ngón tay, không chạm mép ảnh.</li>
+      </ul>
+    </div>
+  </details>
+</main>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="false" aria-labelledby="sh-t">
+  <button class="btn alt close" id="shclose">Đóng</button>
+  <h2 id="sh-t"></h2>
+  <div class="sub" id="sh-s"></div>
+  <div class="cands" id="sh-c"></div>
+</div>
+
+<script src="core.js"></script>
+<script>
+{
+const $ = id => document.getElementById(id);
+const C = window.PuzzleCore;
+const MAXW = 1600;
+let lib = null, state = null;
+const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} } };
+$('swap').checked = store.get('swap') === '1';
+$('showall').checked = store.get('showall') === '1';
+$('unique').checked = store.get('unique') !== '0';
+$('unique').onchange = e => { store.set('unique', e.target.checked ? '1' : '0'); if (state) { C.finalize(state.results, e.target.checked); draw(); } };
+
+function setLib(entries, name){
+  lib = C.buildLibrary(entries);
+  $('libinfo').textContent = `${name} · ${lib.length} mảnh trong thư viện`;
+}
+fetch('lib.json').then(r => r.json()).then(j => setLib(j, 'Bộ Titan 212')).catch(() => { $('libinfo').textContent = 'Không nạp được thư viện'; });
+
+$('shoot').onclick = () => $('fcam').click();
+$('pick').onclick = () => $('fpick').click();
+$('libbtn').onclick = () => $('flib').click();
+$('fcam').onchange = e => e.target.files[0] && run(e.target.files[0]);
+$('fpick').onchange = e => e.target.files[0] && run(e.target.files[0]);
+$('flib').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const j = JSON.parse(await f.text()); setLib(j, f.name.replace(/\.json$/i, '')); $('status').textContent = 'Đã nạp thư viện mới.'; }
+  catch (err) { $('status').textContent = 'File thư viện không hợp lệ.'; }
+};
+$('swap').onchange = e => { store.set('swap', e.target.checked ? '1' : '0'); state && draw(); };
+$('showall').onchange = e => { store.set('showall', e.target.checked ? '1' : '0'); state && draw(); };
+$('shclose').onclick = () => $('sheet').classList.remove('on');
+
+const tick = () => new Promise(r => setTimeout(r, 0));
+async function loadImage(file){
+  try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (e) {
+    const url = URL.createObjectURL(file); const im = new Image(); im.src = url; await im.decode(); return im;
+  }
+}
+function setStatus(html, frac){
+  $('status').innerHTML = html + (frac != null ? `<div class="prog"><i style="width:${Math.round(frac*100)}%"></i></div>` : '');
+}
+
+async function run(file){
+  if (!lib) { setStatus('Thư viện chưa sẵn sàng, thử lại sau giây lát.'); return; }
+  $('sheet').classList.remove('on');
+  setStatus('Đang đọc ảnh…', 0);
+  const img = await loadImage(file);
+  const iw = img.width, ih = img.height, s = Math.min(1, MAXW / Math.max(iw, ih));
+  const w = Math.round(iw * s), h = Math.round(ih * s);
+  const cv = $('cv'); cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
+  const photo = ctx.getImageData(0, 0, w, h);
+  // bản độ phân giải gốc (tối đa 4000 px) để tách lại từng mảnh cho nét
+  const fsc = Math.min(1, 4000 / Math.max(iw, ih)), FW = Math.round(iw * fsc), FH = Math.round(ih * fsc);
+  let full = null;
+  if (FW > w * 1.3) { const fc = document.createElement('canvas'); fc.width = FW; fc.height = FH; const fx = fc.getContext('2d'); fx.drawImage(img, 0, 0, FW, FH); full = fx.getImageData(0, 0, FW, FH).data; }
+  $('empty').hidden = true; cv.hidden = false;
+  setStatus('Đang tách mảnh…', 0.05); await tick();
+  const pieces = C.segment(photo.data, w, h);
+  if (!pieces.length) { setStatus('<b>Không thấy mảnh nào.</b> Thử chụp gần hơn, nền trơn và đủ sáng.'); return; }
+  if (full) { setStatus(`Đang tách nét ${pieces.length} mảnh ở độ phân giải gốc…`, 0.08); await tick();
+    for (const P of pieces) P.hi = C.refinePiece(full, FW, FH, P, FW / w); }
+  // cắt sát vùng có mảnh cho nhãn to, dễ đọc
+  let bx0 = w, by0 = h, bx1 = 0, by1 = 0;
+  for (const P of pieces) { bx0 = Math.min(bx0, P.ox); by0 = Math.min(by0, P.oy); bx1 = Math.max(bx1, P.ox + P.w); by1 = Math.max(by1, P.oy + P.h); }
+  const mg = Math.round(0.04 * Math.max(bx1 - bx0, by1 - by0));
+  bx0 = Math.max(0, bx0 - mg); by0 = Math.max(0, by0 - mg); bx1 = Math.min(w, bx1 + mg); by1 = Math.min(h, by1 + mg);
+  const cw = bx1 - bx0, ch = by1 - by0, crop = ctx.getImageData(bx0, by0, cw, ch);
+  for (const P of pieces) { P.ox -= bx0; P.oy -= by0; }
+  cv.width = cw; cv.height = ch; ctx.putImageData(crop, 0, 0);
+  const results = [];
+  for (let i = 0; i < pieces.length; i++) {
+    setStatus(`Đang so khớp mảnh <b>${i + 1}/${pieces.length}</b>…`, 0.1 + 0.9 * i / pieces.length); await tick();
+    const P = pieces[i], q = (full && P.hi) || P;
+    results.push({ p: P, touch: P.touch, res: Math.sqrt(q.aw ? q.area : P.area), cands: C.matchPiece(q, lib) });
+  }
+  C.finalize(results, $('unique').checked);
+  full = null;
+  state = { photo: crop, w: cw, h: ch, results };
+  draw();
+  const n = results.filter(r => r.status === 'ok').length, m = results.filter(r => r.status === 'maybe').length;
+  setStatus(`<b>${results.length} mảnh</b> · ${n} chắc chắn${m ? ` · ${m} có thể` : ''}${results.length - n - m ? ` · ${results.length - n - m} chưa nhận ra` : ''}`);
+}
+
+const side = c => (c.mir !== $('swap').checked) ? 'úp' : 'ngửa';
+const PAL = { ok: '#16a35a', maybe: '#ee9612', none: '#e0392f', edge: '#8a8a8a' };
+const VAR = { ok: 'var(--ok)', maybe: 'var(--maybe)', none: 'var(--bad)', edge: '#888' };
+function colorOf(r){ return PAL[r.status]; }
+function labelOf(r){
+  const c = r.cands[0];
+  if (r.status === 'ok') return [`#${c.num}`, side(c)];
+  if (r.status === 'maybe') return [`#${c.num}?`, side(c)];
+  if ($('showall').checked && r.status !== 'edge') return [`?${c.num}`, 'không chắc'];
+  return ['?', r.status === 'edge' ? 'sát mép' : ''];
+}
+
+function draw(){
+  const { photo, w, h, results } = state, cv = $('cv'), ctx = cv.getContext('2d');
+  ctx.putImageData(photo, 0, 0);
+  const medA = results.map(r => r.p.area).sort((a, b) => a - b)[results.length >> 1] || 400;
+  const lw = Math.max(1, Math.round(Math.sqrt(medA) / 45));
+  // viền mảnh
+  const ov = ctx.getImageData(0, 0, w, h), d = ov.data;
+  for (const r of results) {
+    const col = hex(colorOf(r));
+    const P = r.p;
+    for (let y = 0; y < P.h; y++) for (let x = 0; x < P.w; x++) {
+      if (!P.mask[y * P.w + x]) continue;
+      let edge = false;
+      for (let dy = -lw; dy <= lw && !edge; dy++) for (let dx = -lw; dx <= lw; dx++) {
+        if (dx * dx + dy * dy > lw * lw) continue;
+        const xx = x + dx, yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= P.w || yy >= P.h || !P.mask[yy * P.w + xx]) { edge = true; break; }
+      }
+      if (edge) { const gx = x + P.ox, gy = y + P.oy; if (gx >= 0 && gy >= 0 && gx < w && gy < h) { const i = 4 * (gy * w + gx); d[i] = col[0]; d[i+1] = col[1]; d[i+2] = col[2]; } }
+    }
+  }
+  ctx.putImageData(ov, 0, 0);
+  // nhãn số
+  results.forEach((r, i) => {
+    const [t1, t2] = labelOf(r), x = r.p.ox + r.p.cx, y = r.p.oy + r.p.cy, col = colorOf(r);
+    // cỡ chữ theo kích thước mảnh: nhãn nằm gọn trong mảnh
+    const fs = Math.max(9, Math.min(48, Math.round(0.2 * Math.sqrt(r.p.area))));
+    ctx.font = `800 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
+    const w1 = ctx.measureText(t1).width;
+    ctx.font = `600 ${Math.round(fs * 0.5)}px "Be Vietnam Pro", system-ui, sans-serif`;
+    const w2 = t2 ? ctx.measureText(t2).width : 0;
+    const bw = Math.max(w1, w2) + fs * 0.4, bh = fs * (t2 ? 1.62 : 1.2);
+    ctx.fillStyle = 'rgba(255,255,255,.88)'; ctx.strokeStyle = col; ctx.lineWidth = Math.max(1, fs / 12);
+    roundRect(ctx, x - bw / 2, y - bh / 2, bw, bh, fs * 0.25); ctx.fill(); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = col; ctx.font = `800 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
+    ctx.fillText(t1, x, y - bh / 2 + fs * 0.98);
+    if (t2) { ctx.fillStyle = '#333'; ctx.font = `600 ${Math.round(fs * 0.5)}px "Be Vietnam Pro", system-ui, sans-serif`; ctx.fillText(t2, x, y - bh / 2 + fs * 1.48); }
+    ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.font = `600 ${Math.max(8, Math.round(fs * 0.45))}px system-ui`; ctx.textAlign = 'left';
+    ctx.fillText('P' + (i + 1), r.p.ox + 4, Math.max(fs * 0.5, r.p.oy - 4));
+  });
+  // danh sách
+  $('chips').innerHTML = results.map((r, i) => {
+    const [t1, t2] = labelOf(r);
+    return `<button class="chip" data-i="${i}" style="--c:${VAR[r.status]}"><div class="m">P${i + 1}</div><div class="n">${t1}</div><div class="m">${t2 || '&nbsp;'}</div></button>`;
+  }).join('');
+  for (const b of document.querySelectorAll('.chip')) b.onclick = () => openSheet(+b.dataset.i);
+}
+function hex(c){ c = c.replace('#',''); if (c.length === 3) c = c.split('').map(x => x + x).join(''); return [0,2,4].map(i => parseInt(c.substr(i,2),16)); }
+function roundRect(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+$('cv').addEventListener('click', e => {
+  if (!state) return;
+  const rect = e.target.getBoundingClientRect(), x = (e.clientX - rect.left) * state.w / rect.width, y = (e.clientY - rect.top) * state.h / rect.height;
+  let best = -1, bd = 1e18;
+  state.results.forEach((r, i) => {
+    const P = r.p, lx = Math.round(x - P.ox), ly = Math.round(y - P.oy);
+    if (lx >= 0 && ly >= 0 && lx < P.w && ly < P.h && P.mask[ly * P.w + lx]) { best = i; bd = 0; return; }
+    const dd = (x - P.ox - P.cx) ** 2 + (y - P.oy - P.cy) ** 2; if (bd > 0 && dd < bd && dd < (P.w * P.w + P.h * P.h) / 4) { bd = dd; best = i; }
+  });
+  if (best >= 0) openSheet(best);
+});
+
+function openSheet(i){
+  const r = state.results[i], [t1, t2] = labelOf(r);
+  $('sh-t').textContent = `Mảnh P${i + 1}: ${t1}${t2 ? ' · ' + t2 : ''}`;
+  const msg = { ok: 'Khớp chắc chắn.', maybe: 'Khá giống nhưng chưa chắc — so hình bên dưới.', none: 'Không ứng viên nào đủ giống. Có thể mảnh bị lóa, gãy, hoặc thuộc bộ khác.', edge: 'Mảnh chạm mép ảnh nên bị thiếu — chụp lại cho trọn mảnh.' };
+  $('sh-s').textContent = msg[r.status] + ' Xám = trùng khít, đỏ = thừa ở ảnh chụp, xanh = thiếu so với sơ đồ.';
+  const N = C.NF, W = N >> 5;
+  $('sh-c').innerHTML = r.cands.slice(0, 6).map((c, k) => `<div class="cand"><canvas width="${N}" height="${N}" id="cc${k}"></canvas><div class="n">#${c.num}</div><div class="m">khớp ${(c.iou * 100).toFixed(0)}% · ${side(c)}</div></div>`).join('');
+  r.cands.slice(0, 6).forEach((c, k) => {
+    const v = C.rasterPiece(r.p, N, c.ang, c.mir, c.sy), L = c.e.f, ctx = $('cc' + k).getContext('2d'), im = ctx.createImageData(N, N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const j = y * W + (x >> 5), bit = 1 << (x & 31), a = (v[j] & bit) !== 0, b = (L[j] & bit) !== 0, o = 4 * (y * N + x);
+      const col = a && b ? [150,150,150,255] : a ? [220,60,50,255] : b ? [40,90,220,255] : [0,0,0,0];
+      im.data.set(col, o);
+    }
+    ctx.putImageData(im, 0, 0);
+  });
+  $('sheet').classList.add('on');
+}
+}
+</script>
+<script>try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {}</script>
+</body>
+</html>
