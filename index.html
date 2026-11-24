@@ -115,7 +115,8 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
   <div class="cands" id="sh-c"></div>
 </div>
 
-<script src="core.js"></script>
+<script src="core.js?v=2"></script>
+<script src="lib.js?v=2"></script>
 <script>
 {
 const $ = id => document.getElementById(id);
@@ -132,7 +133,13 @@ function setLib(entries, name){
   lib = C.buildLibrary(entries);
   $('libinfo').textContent = `${name} · ${lib.length} mảnh trong thư viện`;
 }
-fetch('lib.json').then(r => r.json()).then(j => setLib(j, 'Bộ Titan 212')).catch(() => { $('libinfo').textContent = 'Không nạp được thư viện'; });
+try {
+  if (!window.PuzzleCore) throw new Error('không tải được core.js');
+  if (!window.PUZZLE_LIB) throw new Error('không tải được lib.js');
+  setLib(window.PUZZLE_LIB, 'Bộ Titan 212');
+} catch (err) {
+  $('libinfo').textContent = 'Không nạp được thư viện: ' + (err && err.message || err) + '. Hãy tải lại trang (kéo xuống để làm mới).';
+}
 
 $('shoot').onclick = () => $('fcam').click();
 $('pick').onclick = () => $('fpick').click();
