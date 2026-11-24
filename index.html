@@ -17,9 +17,10 @@
    PICTURE: chính ảnh chụp đã đánh số, chiếm trọn màn hình.
    COLOUR and TYPE: nền giấy trắng ngà lạnh / đêm xanh than; đồng thau làm điểm nhấn; xanh lá = chắc chắn, hổ phách = có thể, đỏ = chưa rõ. Be Vietnam Pro.
    LAYOUT: một cột: nút chụp lớn, ảnh kết quả, danh sách số; chi tiết mảnh trượt lên từ dưới. */
-:root{color-scheme:light dark;
---bg:light-dark(#f3f2ee,#12161a);--card:light-dark(#ffffff,#1b2127);--ink:light-dark(#16181b,#eceae4);--mute:light-dark(#5e636b,#9aa3ac);
---line:light-dark(#dcd9d1,#2c343c);--brass:light-dark(#8a6a1f,#d5b25e);--ok:light-dark(#11804a,#3fd08a);--maybe:light-dark(#b26a00,#f2a93b);--bad:light-dark(#c8322a,#ff6b5e)}
+:root{color-scheme:light dark;--bg:#f3f2ee;--card:#ffffff;--ink:#16181b;--mute:#5e636b;--line:#dcd9d1;--brass:#8a6a1f;--ok:#11804a;--maybe:#b26a00;--bad:#c8322a;--onbrass:#fff;--canvasbg:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#12161a;--card:#1b2127;--ink:#eceae4;--mute:#9aa3ac;--line:#2c343c;--brass:#d5b25e;--ok:#3fd08a;--maybe:#f2a93b;--bad:#ff6b5e;--onbrass:#16120a;--canvasbg:#0f1316}}
+:root[data-theme=light]{--bg:#f3f2ee;--card:#ffffff;--ink:#16181b;--mute:#5e636b;--line:#dcd9d1;--brass:#8a6a1f;--ok:#11804a;--maybe:#b26a00;--bad:#c8322a;--onbrass:#fff;--canvasbg:#fff}
+:root[data-theme=dark]{--bg:#12161a;--card:#1b2127;--ink:#eceae4;--mute:#9aa3ac;--line:#2c343c;--brass:#d5b25e;--ok:#3fd08a;--maybe:#f2a93b;--bad:#ff6b5e;--onbrass:#16120a;--canvasbg:#0f1316}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Be Vietnam Pro",system-ui,sans-serif;overflow-x:clip}
@@ -28,8 +29,8 @@ h1{font-size:clamp(24px,5vw,34px);line-height:1.05;margin:0;font-weight:800;lett
 .sub{color:var(--mute);font-size:14px}
 main{padding:8px max(4vw,16px) 40px;max-width:1240px;margin:0 auto}
 .bar{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}
-.btn{appearance:none;border:0;border-radius:14px;min-height:52px;padding:0 20px;font:600 17px/1 inherit;font-family:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
-.btn.main{background:var(--brass);color:light-dark(#fff,#16120a);flex:1 1 220px;justify-content:center;font-size:19px;min-height:60px}
+.btn{appearance:none;border:0;border-radius:14px;min-height:52px;padding:0 20px;font-family:inherit;font-weight:600;font-size:17px;line-height:1;-webkit-appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
+.btn.main{background:var(--brass);color:var(--onbrass);flex:1 1 220px;justify-content:center;font-size:19px;min-height:60px}
 .btn.alt{background:var(--card);color:var(--ink);border:1px solid var(--line)}
 .btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 input[type=file]{display:none}
@@ -52,7 +53,7 @@ input[type=file]{display:none}
 .sheet h2{margin:0 0 4px;font-size:22px}
 .cands{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:10px}
 .cand{border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
-.cand canvas{width:100%;aspect-ratio:1;image-rendering:pixelated;border-radius:8px;background:light-dark(#fff,#0f1316)}
+.cand canvas{width:100%;aspect-ratio:1;image-rendering:pixelated;border-radius:8px;background:var(--canvasbg)}
 .cand .n{font-weight:800;font-size:20px}
 .cand .m{font-size:13px;color:var(--mute)}
 .close{float:right}
@@ -115,10 +116,11 @@ summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:
   <div class="cands" id="sh-c"></div>
 </div>
 
-<script src="core.js?v=2"></script>
-<script src="lib.js?v=2"></script>
+<script src="core.js?v=3"></script>
+<script src="lib.js?v=3"></script>
 <script>
-{
+(function () {
+'use strict';
 const $ = id => document.getElementById(id);
 const C = window.PuzzleCore;
 const MAXW = 1600;
@@ -301,7 +303,7 @@ function openSheet(i){
   });
   $('sheet').classList.add('on');
 }
-}
+})();
 </script>
 <script>try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {}</script>
 </body>
